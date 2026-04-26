@@ -1,8 +1,17 @@
 #include <ctype.h>
 #include "vector.h"
 
+#define CELL_WIDTH 48
+
 typedef struct
 {
+	__uint32_t	width;
+	__uint32_t	height;
+	
+	// considering that the player spawns at (0, 0), this is needed to normalise coordinates
+	__uint32_t player_offset_x;
+	__uint32_t player_offset_y;
+
 	char	name[8];
 	t_vec	*vertex; // (vertex_t *)
 	t_vec	*linedef; // (linedef_t *)
@@ -11,6 +20,8 @@ typedef struct
 	t_vec	*ssectors;
 	t_vec	*segs;
 	t_vec	*nodes;
+
+	// ill ignore those for now
 	t_vec	*things;
 	t_vec	*reject;
 	t_vec	*blockmap;
@@ -129,6 +140,14 @@ void	map_init(map_t	*map)
 {
 	map->vertex = vec_init();
 	map->linedef = vec_init();
+	map->sideddefs = vec_init();
+	map->sectors = vec_init();
+	map->ssectors = vec_init();
+	map->segs = vec_init();
+	map->nodes = vec_init();
+	map->things = vec_init();
+	map->reject = vec_init();
+	map->blockmap = vec_init();
 }
 
 //returns tag of a vertex
@@ -156,20 +175,58 @@ bool	check_vertex(map_t *map, __uint16_t x, __uint16_t y)
 	return (false);
 }
 
-void	make_vertex(map_t *map, __uint16_t x, __uint16_t y)
+__uint16_t	make_vertex(map_t *map, __uint16_t x, __uint16_t y)
 {
 	vertex_t	*v;
 
 	if (check_vertex(map, x, y))
-		return ;
+		return find_vertex(map, x, y);
 
 	v = calloc(1, sizeof(vertex_t));
 	v->x = x;
 	v->y = y;
 	vec_append(map->vertex, v);
+	return (map->vertex.size - 1);
+}
+
+void	make_linedef(map_t *map, __uint16_t x1, __uint16_t y1, __int16_t x2, __uint16_t y2)
+{
+	linedef_t *l = calloc(1, sizeof(linedef_t));
+
+	l->start = make_vertex(map, x1, y1);
+	l->end = make_vertex(map, x2, y2);
+	l->flags = 0b100000001;
+	//TODO: rest of linedef
+
+	vec_append(map->linedef, l);
+}
+
+__uint32_t	calc_dir_offset(map_t *map)
+{
+	return (
+		map->vertex->size * sizeof(vertex_t) +
+		map->linedef->size * sizeof(linedef_t) +
+		map->sideddefs->size * sizeof(sideddef_t) +
+		map->sectors->size * sizeof(sector_t) +
+		map->ssectors->size * sizeof(ssector_t) +
+		map->segs->size * sizeof(seg_t) +
+		map->nodes->size * sizeof(node_t));
 }
 
 int main()
 {
 
 }
+
+
+// 1111101111
+// 1000000001
+// 1101011011
+// 1000011111
+// 1111001001
+// 1000011011
+// 1011000001
+// 1010011011
+// 1011111111
+
+//starting coord (1, 1)
