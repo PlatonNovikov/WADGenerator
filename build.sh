@@ -1,0 +1,1 @@
+cc main.c vector.c -o wadgen

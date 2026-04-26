@@ -1,6 +1,9 @@
 #include <ctype.h>
+#include <stdio.h>
+
 #include "vector.h"
 
+#define HEADER_OFF 12
 #define CELL_WIDTH 48
 
 typedef struct
@@ -72,15 +75,26 @@ typedef struct
 // 7 	Never shows on automap
 // 8 	Always shows on automap
 
-struct WADSidedef
+typedef struct
 {
-    __int16_t x_offset;
-    __int16_t y_offset;
-    __int8_t upper_texture[8];
-    __int8_t lower_texture[8];
-    __int8_t middle_texture[8];
-    __uint16_t sector_id;
-};
+    __int16_t	x_offset;
+    __int16_t	y_offset;
+    __int8_t	upper_texture[8];
+    __int8_t	lower_texture[8];
+    __int8_t	middle_texture[8];
+    __uint16_t	sector_id;
+} sideddef_t;
+
+typedef struct
+{
+    __int16_t	floor_height;
+    __int16_t	ceiling_height;
+    __int8_t	floor_texture[8];
+    __int8_t	ceiling_texture[8];
+    __uint16_t	light_level;
+    __uint16_t	type;
+    __uint16_t	tag;
+} sector_t;
 
 typedef struct
 {
@@ -152,7 +166,7 @@ void	map_init(map_t	*map)
 
 //returns tag of a vertex
 //given vertex SHOULD exist
-__uint16_t	*find_vertex(map_t *map, __uint16_t x, __uint16_t y)
+__uint16_t	find_vertex(map_t *map, __uint16_t x, __uint16_t y)
 {
 	for (size_t	i = 0; i < map->vertex->size; i++)
 	{
@@ -186,7 +200,7 @@ __uint16_t	make_vertex(map_t *map, __uint16_t x, __uint16_t y)
 	v->x = x;
 	v->y = y;
 	vec_append(map->vertex, v);
-	return (map->vertex.size - 1);
+	return (map->vertex->size - 1);
 }
 
 void	make_linedef(map_t *map, __uint16_t x1, __uint16_t y1, __int16_t x2, __uint16_t y2)
@@ -213,9 +227,19 @@ __uint32_t	calc_dir_offset(map_t *map)
 		map->nodes->size * sizeof(node_t));
 }
 
+void write_stuff(map_t *map)
+{
+	__uint32_t	offset = HEADER_OFF;
+	
+	for (int i = 0; i < map->vertex->size; i++)
+	{
+
+	}
+}
+
 int main()
 {
-
+	return (0);
 }
 
 
