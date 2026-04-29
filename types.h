@@ -3,6 +3,8 @@
 
 #include "vector.h"
 
+#define MAP_LUMP_SIZE 0x0C
+
 typedef struct
 {
 	uint32_t	width;
@@ -146,3 +148,13 @@ enum EMAPLUMPSINDEX
     eBLOCKMAP,
     eCOUNT
 };
+
+void	write_header(FILE *file, wad_header_t *h);
+void	write_vertex(FILE *file, vertex_t *v);
+void	write_linedef(FILE *file, linedef_t *l);
+void	write_filelump(FILE *file, filelump_t *f);
+void	write_sideddef(FILE *file, sideddef_t *s);
+void	write_sector(FILE *file, sector_t *s);
+void	write_ssector(FILE *file, ssector_t *s);
+void	write_seg(FILE *file, seg_t *s);
+void	write_node(FILE *file, node_t *n);

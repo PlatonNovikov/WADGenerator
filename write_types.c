@@ -4,7 +4,7 @@
 #include "vector.h"
 #include "types.h"
 
-void	write16rev(FILE *file, uint16_t v)
+static void	write16rev(FILE *file, uint16_t v)
 {
 	uint8_t	tmp;
 
@@ -14,7 +14,7 @@ void	write16rev(FILE *file, uint16_t v)
 	fwrite(&tmp, sizeof(int8_t), 1, file);
 }
 
-void	write32rev(FILE *file, uint32_t v)
+static void	write32rev(FILE *file, uint32_t v)
 {
 	uint8_t	tmp;
 

@@ -79,6 +79,7 @@ uint32_t	dir_offset(map_t *map)
 {
 	return (
 		HEADER_OFF +
+		MAP_LUMP_SIZE +
 		map->vertex->size * sizeof(vertex_t) +
 		map->linedef->size * sizeof(linedef_t) +
 		map->sideddefs->size * sizeof(sideddef_t) +
@@ -92,24 +93,46 @@ uint32_t	linedef_offset(map_t *map)
 {
 	return (
 		HEADER_OFF +
+		MAP_LUMP_SIZE +
 		map->vertex->size * sizeof(vertex_t)
 	);
 }
 
 void write_dir(map_t *map)
 {
+	filelump_t tmp = {0};
+
 	fseek(map->file, dir_offset(map), SEEK_SET);
+
+	tmp = (filelump_t){HEADER_OFF, MAP_LUMP_SIZE, {0, 0, 0, 0, 'M', 'A', 'Z', 'E'}};
+	write_filelump(map->file, &tmp);
+
+	tmp = (filelump_t){HEADER_OFF + MAP_LUMP_SIZE, map->vertex->size * sizeof(vertex_t),"VERTEXES"};
+	write_filelump(map->file, &tmp);
+
+	tmp = (filelump_t){linedef_offset(map), map->linedef->size * sizeof(linedef_t),"LINEDEFS"};
+	write_filelump(map->file, &tmp);
 }
 
 void write_stuff(map_t *map)
 {
 	uint32_t	offset = HEADER_OFF;
 
+	wad_header_t h = {"PWAD", 3, dir_offset(map)};
+	write_header(map->file, &h);
+
 	fseek(map->file, HEADER_OFF, SEEK_SET);
+	fwrite("skibidi sigma", sizeof(int8_t), 14, map->file);
+
+	fseek(map->file, HEADER_OFF + MAP_LUMP_SIZE, SEEK_SET);
+
 	for (int i = 0; i < map->vertex->size; i++)
-	{
-		fwrite(vec_get(map->vertex, i), sizeof(vertex_t), 1, map->file);
-	}
+		write_vertex(map->file, vec_get(map->vertex, i));
+
+	for (int i = 0; i < map->linedef->size; i++)
+		write_linedef(map->file, vec_get(map->linedef, i));
+
+	write_dir(map);
 }
 
 void create_square(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
@@ -123,6 +146,7 @@ void create_square(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 int main()
 {
 	map_t map = {0};
+	map_init(&map);
 	map.file = fopen("map.wad", "r+b");
 
 	create_square(&map, 10, 10, 20, 20);

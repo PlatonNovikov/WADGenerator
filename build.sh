@@ -1,1 +1,1 @@
-cc main.c vector.c -o wadgen
+cc main.c write_types.c vector.c -o wadgen -g
