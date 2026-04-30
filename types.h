@@ -4,6 +4,10 @@
 #include "vector.h"
 
 #define MAP_LUMP_SIZE 0x90
+#define EAST	0
+#define NORTH	0x4000
+#define	WEST	0x8000
+#define SOUTH	0xC000
 
 typedef struct
 {
@@ -15,16 +19,19 @@ typedef struct
 	int16_t player_offset_y;
 
 	char	name[8];
-	t_vec	*vertex; // (vertex_t *)
+
+
+	// original order of stuff
+	t_vec	*things;
 	t_vec	*linedef; // (linedef_t *)
 	t_vec	*sideddefs;
-	t_vec	*sectors;
-	t_vec	*ssectors;
+	t_vec	*vertex; // (vertex_t *)
 	t_vec	*segs;
+	t_vec	*ssectors;
 	t_vec	*nodes;
+	t_vec	*sectors;
 
 	// ill ignore those for now
-	t_vec	*things;
 	t_vec	*reject;
 	t_vec	*blockmap;
 
@@ -37,6 +44,15 @@ typedef struct
 	uint32_t	entries; //The number entries in the directory
 	uint32_t	offset; //Offset in bytes to the directory in the WAD file.
 } wad_header_t;
+
+typedef struct
+{
+    int16_t x_position;
+    int16_t y_position;
+    uint16_t angle;
+    uint16_t type;
+    uint16_t flags;
+} thing_t;
 
 typedef struct
 {
@@ -158,3 +174,4 @@ void	write_sector(FILE *file, sector_t *s);
 void	write_ssector(FILE *file, ssector_t *s);
 void	write_seg(FILE *file, seg_t *s);
 void	write_node(FILE *file, node_t *n);
+void	write_thing(FILE *file, thing_t *t);

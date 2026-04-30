@@ -113,3 +113,12 @@ void	write_node(FILE *file, node_t *n)
 	write16rev(file, n->right_child_id);
 	write16rev(file, n->left_child_id);
 }
+
+void	write_thing(FILE *file, thing_t *t)
+{
+	write16rev(file, t->x_position);
+	write16rev(file, t->y_position);
+	write16rev(file, t->angle);
+	write16rev(file, t->type);
+	write16rev(file, t->flags);
+}
