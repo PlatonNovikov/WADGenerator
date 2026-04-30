@@ -104,7 +104,7 @@ void write_dir(map_t *map)
 
 	fseek(map->file, dir_offset(map), SEEK_SET);
 
-	tmp = (filelump_t){HEADER_OFF, MAP_LUMP_SIZE, {0, 0, 0, 0, 'M', 'A', 'Z', 'E'}};
+	tmp = (filelump_t){HEADER_OFF, MAP_LUMP_SIZE, {0, 0, 0, 'M', 'A', 'P', '0', '1'}};
 	write_filelump(map->file, &tmp);
 
 	tmp = (filelump_t){HEADER_OFF + MAP_LUMP_SIZE, map->vertex->size * sizeof(vertex_t),"VERTEXES"};
@@ -122,7 +122,7 @@ void write_stuff(map_t *map)
 	write_header(map->file, &h);
 
 	fseek(map->file, HEADER_OFF, SEEK_SET);
-	fwrite("skibidi sigma", sizeof(int8_t), 14, map->file);
+	fwrite("version 2.3\0BM", sizeof(int8_t), 14, map->file);
 
 	fseek(map->file, HEADER_OFF + MAP_LUMP_SIZE, SEEK_SET);
 

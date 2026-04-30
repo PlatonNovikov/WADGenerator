@@ -3,7 +3,7 @@
 
 #include "vector.h"
 
-#define MAP_LUMP_SIZE 0x0C
+#define MAP_LUMP_SIZE 0x90
 
 typedef struct
 {
