@@ -10,8 +10,11 @@
 
 char *output_name = "out.wad";
 
-void	map_init(map_t	*map)
+void	map_init(map_t	*map, uint32_t width, uint32_t height)
 {
+	map->height = height;
+	map->width = width;
+
 	map->vertex = vec_init();
 	map->linedef = vec_init();
 	map->sideddefs = vec_init();
@@ -25,11 +28,11 @@ void	map_init(map_t	*map)
 
 
 	sideddef_t *si = calloc(1, sizeof(sideddef_t));
-	*si = (sideddef_t){0, 0, {0}, "\0\0BRICK1", {0}, 0};
+	*si = (sideddef_t){0, 0, {0}, {0}, "BRICK1", 0};
 	vec_append(map->sideddefs, si);
 
 	sector_t *se = calloc(1, sizeof(sector_t));
-	*se = (sector_t){0, 0, "\0\0BRICK1", "\0\0BRICK1", 100, 0};
+	*se = (sector_t){0, 0, "BRICK1", "BRICK1", 100, 0};
 	vec_append(map->sectors, se);
 }
 
@@ -107,9 +110,9 @@ void	make_linedef(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 	seg1->offset = 0;
 
 	seg_t	*seg2 = calloc(1, sizeof(seg_t));
-	seg2->start = l->start;
-	seg2->end = l->end;
-	seg2->angle = give_direction(x1, y1, x2, y2);
+	seg2->start = l->end;
+	seg2->end = l->start;
+	seg2->angle = give_direction(x2, y2, x1, y1);
 	seg2->linedef = map->linedef->size;
 	seg2->direction = 1;
 	seg2->offset = 0;
@@ -131,7 +134,7 @@ uint32_t	linedef_offset(map_t *map)
 {
 	return (
 		things_offset(map) +
-		map->things->size * sizeof(thing_t)
+		map->things->size * SIZE_THING
 	);
 }
 
@@ -139,7 +142,7 @@ uint32_t	sidedefs_offset(map_t *map)
 {
 	return (
 		linedef_offset(map) +
-		map->linedef->size * sizeof(linedef_t)
+		map->linedef->size * SIZE_LINEDEF
 	);
 }
 
@@ -147,7 +150,7 @@ uint32_t	vertex_offset(map_t *map)
 {
 	return (
 		sidedefs_offset(map) +
-		map->sideddefs->size * sizeof(sideddef_t)
+		map->sideddefs->size * SIZE_SIDEDEF
 	);
 }
 
@@ -155,7 +158,7 @@ uint32_t	segs_offset(map_t *map)
 {
 	return (
 		vertex_offset(map) +
-		map->vertex->size * sizeof(vertex_t)
+		map->vertex->size * SIZE_VERTEX
 	);
 }
 
@@ -163,7 +166,7 @@ uint32_t	ssectors_offset(map_t *map)
 {
 	return (
 		segs_offset(map) +
-		map->segs->size * sizeof(seg_t)
+		map->segs->size * SIZE_SEG
 	);
 }
 
@@ -171,7 +174,7 @@ uint32_t	nodes_offset(map_t *map)
 {
 	return (
 		ssectors_offset(map) +
-		map->ssectors->size * sizeof(ssector_t)
+		map->ssectors->size * SIZE_SSECTOR
 	);
 }
 
@@ -179,7 +182,7 @@ uint32_t	sectors_offset(map_t *map)
 {
 	return (
 		nodes_offset(map) +
-		map->nodes->size * sizeof(node_t)
+		map->nodes->size * SIZE_NODE
 	);
 }
 
@@ -187,8 +190,46 @@ uint32_t	dir_offset(map_t *map)
 {
 	return (
 		sectors_offset(map) +
-		map->sectors->size * sizeof(sector_t)
+		map->sectors->size * SIZE_SECTOR
 	);
+}
+
+void set_spawn(map_t *map, int32_t x, int32_t y)
+{
+	thing_t	*t = calloc(1, sizeof(thing_t));
+
+	t->x_position = x;
+	t->y_position = y;
+	t->angle = NORTH;
+	t->type = THING_SPAWN;
+	t->flags = 0;
+	vec_append(map->things, t);
+}
+
+void placeholder_node(map_t *map)
+{
+	node_t *n = calloc(1, sizeof(node_t));
+
+	n->x_partition = 0;
+	n->y_partition = 0;
+	n->change_x_partition = 256;
+	n->change_y_partition = 256;
+	n->right_box_top = 0;
+	n->right_box_bottom = 256;
+	n->right_box_left = 0;
+	n->right_box_right = 256;
+	n->left_box_top = 0;
+	n->left_box_bottom = 256;
+	n->left_box_left = 0;
+	n->left_box_right = 256;
+	n->right_child_id = 0b1000000000000000;
+	n->left_child_id = 0b1000000000000000;
+
+	ssector_t *s = calloc(1, sizeof(ssector_t));
+	s->seg_count = map->segs->size;
+	s->seg_start = 0;
+	vec_append(map->nodes, n);
+	vec_append(map->ssectors, s);
 }
 
 void write_dir(map_t *map)
@@ -197,31 +238,31 @@ void write_dir(map_t *map)
 
 	fseek(map->file, dir_offset(map), SEEK_SET);
 
-	tmp = (filelump_t){HEADER_OFF, MAP_LUMP_SIZE, {0, 0, 0, 'M', 'A', 'P', '0', '1'}};
+	tmp = (filelump_t){HEADER_OFF, MAP_LUMP_SIZE, "MAP01"};
 	write_filelump(map->file, &tmp);
 
-	tmp = (filelump_t){things_offset(map), map->things->size * sizeof(thing_t), "\0\0THINGS"};
+	tmp = (filelump_t){things_offset(map), map->things->size * SIZE_THING, "THINGS\0\0"};
 	write_filelump(map->file, &tmp);
 
-	tmp = (filelump_t){linedef_offset(map), map->linedef->size * sizeof(linedef_t),"LINEDEFS"};
+	tmp = (filelump_t){linedef_offset(map), map->linedef->size * SIZE_LINEDEF,"LINEDEFS"};
 	write_filelump(map->file, &tmp);
 
-	tmp = (filelump_t){sidedefs_offset(map), map->sideddefs->size * sizeof(sideddef_t),"SIDEDEFS"};
+	tmp = (filelump_t){sidedefs_offset(map), map->sideddefs->size * SIZE_SIDEDEF,"SIDEDEFS"};
 	write_filelump(map->file, &tmp);
 
-	tmp = (filelump_t){vertex_offset(map), map->vertex->size * sizeof(vertex_t),"VERTEXES"};
+	tmp = (filelump_t){vertex_offset(map), map->vertex->size * SIZE_VERTEX,"VERTEXES"};
 	write_filelump(map->file, &tmp);
 
-	tmp = (filelump_t){segs_offset(map), map->segs->size * sizeof(seg_t),"\0\0\0\0SEGS"};
+	tmp = (filelump_t){segs_offset(map), map->segs->size * SIZE_SEG,"SEGS\0\0\0\0"};
 	write_filelump(map->file, &tmp);
 
-	tmp = (filelump_t){ssectors_offset(map), map->ssectors->size * sizeof(ssector_t),"SSECTORS"};
+	tmp = (filelump_t){ssectors_offset(map), map->ssectors->size * SIZE_SSECTOR,"SSECTORS"};
 	write_filelump(map->file, &tmp);
 
-	tmp = (filelump_t){nodes_offset(map), map->nodes->size * sizeof(node_t),"\0\0\0NODES"};
+	tmp = (filelump_t){nodes_offset(map), map->nodes->size * SIZE_NODE,"NODES\0\0\0"};
 	write_filelump(map->file, &tmp);
 
-	tmp = (filelump_t){sectors_offset(map), map->sectors->size * sizeof(sector_t),"\0SECTORS"};
+	tmp = (filelump_t){sectors_offset(map), map->sectors->size * SIZE_SECTOR,"SECTORS\0"};
 	write_filelump(map->file, &tmp);
 }
 
@@ -281,10 +322,11 @@ void create_square(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 int main()
 {
 	map_t map = {0};
-	map_init(&map);
-	map.file = fopen("map.wad", "r+b");
-
-	create_square(&map, 10, 10, 20, 20);
+	map_init(&map, 256, 256);
+	set_spawn(&map, 128, 128);
+	create_square(&map, 32, 32, 64, 64);
+	placeholder_node(&map);
+	map.file = fopen("map.wad", "w+b");
 	write_stuff(&map);
 	return (0);
 }

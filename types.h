@@ -3,11 +3,21 @@
 
 #include "vector.h"
 
-#define MAP_LUMP_SIZE 0x90
+#define MAP_LUMP_SIZE 0
 #define EAST	0
 #define NORTH	0x4000
 #define	WEST	0x8000
 #define SOUTH	0xC000
+#define	THING_SPAWN 1
+
+#define SIZE_THING 10
+#define SIZE_LINEDEF 14
+#define SIZE_SIDEDEF 30
+#define SIZE_VERTEX 4
+#define SIZE_SEG 12
+#define SIZE_SSECTOR 4
+#define SIZE_NODE 28
+#define SIZE_SECTOR 26
 
 typedef struct
 {
