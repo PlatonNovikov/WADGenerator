@@ -21,10 +21,9 @@
 
 typedef struct
 {
-	uint32_t	width;
-	uint32_t	height;
+	uint16_t	width;
+	uint16_t	height;
 
-	// considering that the player spawns at (0, 0), this is needed to normalise coordinates
 	int16_t	player_offset_x;
 	int16_t player_offset_y;
 
@@ -173,6 +172,20 @@ enum EMAPLUMPSINDEX
     eREJECT,
     eBLOCKMAP,
     eCOUNT
+};
+
+typedef struct {
+	char		*mapstr;
+	uint16_t	height;
+	uint16_t	width;
+} input_t;
+
+enum INPUTF
+{
+	eEMPTY = '0',
+	eWALL = '1',
+	eSPAWN = '2',
+	eEXIT = '3'
 };
 
 void	write_header(FILE *file, wad_header_t *h);

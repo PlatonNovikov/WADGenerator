@@ -6,7 +6,7 @@
 #include "types.h"
 
 #define HEADER_OFF 12
-#define CELL_WIDTH 48
+#define CELL_SIZE 48
 
 char *output_name = "out.wad";
 
@@ -28,11 +28,11 @@ void	map_init(map_t	*map, uint32_t width, uint32_t height)
 
 
 	sideddef_t *si = calloc(1, sizeof(sideddef_t));
-	*si = (sideddef_t){0, 0, {0}, {0}, "BRICK1", 0};
+	*si = (sideddef_t){0, 0, "BRICK1", "BRICK1", "BRICK1", 0};
 	vec_append(map->sideddefs, si);
 
 	sector_t *se = calloc(1, sizeof(sector_t));
-	*se = (sector_t){0, 0, "BRICK1", "BRICK1", 100, 0};
+	*se = (sector_t){0, 64, "BRICK1", "BRICK1", 100, 0};
 	vec_append(map->sectors, se);
 }
 
@@ -212,8 +212,8 @@ void placeholder_node(map_t *map)
 
 	n->x_partition = 0;
 	n->y_partition = 0;
-	n->change_x_partition = 256;
-	n->change_y_partition = 256;
+	n->change_x_partition = 1;
+	n->change_y_partition = 1;
 	n->right_box_top = 0;
 	n->right_box_bottom = 256;
 	n->right_box_left = 0;
@@ -311,7 +311,7 @@ void write_stuff(map_t *map)
 	write_dir(map);
 }
 
-void create_square(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+void create_rect(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 {
 	make_linedef(map, x1, y1, x1, y2);
 	make_linedef(map, x1, y1, x2, y1);
@@ -319,12 +319,50 @@ void create_square(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 	make_linedef(map, x1, y2, x2, y2);
 }
 
+void convert_input(map_t *map, input_t *input)
+{
+	size_t i = 0;
+
+	map_init(map, input->width * CELL_SIZE, input->height * CELL_SIZE);
+	map->height = input->height;
+	map->width = input->width;
+	while (input->mapstr[i])
+	{
+		switch (input->mapstr[i])
+		{
+		case eEMPTY:
+			break;
+
+		case eWALL:
+			create_rect(
+				map,
+				(i % map->height) * CELL_SIZE,
+				(i / map->height) * CELL_SIZE,
+				(i % map->height) * CELL_SIZE + CELL_SIZE,
+				(i / map->height) * CELL_SIZE + CELL_SIZE
+			);
+			break;
+
+		case eSPAWN:
+				set_spawn(
+					map,
+					(i % map->height) * CELL_SIZE + CELL_SIZE / 2,
+					(i / map->height) * CELL_SIZE + CELL_SIZE / 2
+				);
+				break;
+		default:
+			break;
+		}
+		i++;
+	}
+}
+
 int main()
 {
 	map_t map = {0};
-	map_init(&map, 256, 256);
-	set_spawn(&map, 128, 128);
-	create_square(&map, 32, 32, 64, 64);
+	char *mapstr = "111110111112000000011101011011100001111111110010011000011011101100000110100110111011111111";
+	input_t placeholder = {mapstr, 10, 10};
+	convert_input(&map, &placeholder);
 	placeholder_node(&map);
 	map.file = fopen("map.wad", "w+b");
 	write_stuff(&map);
