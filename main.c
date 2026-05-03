@@ -1,12 +1,12 @@
-#include <ctype.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <string.h>
 
 #include "vector.h"
 #include "types.h"
 
 #define HEADER_OFF 12
-#define CELL_SIZE 48
+#define CELL_SIZE 128
 
 char *output_name = "out.wad";
 
@@ -32,7 +32,7 @@ void	map_init(map_t	*map, uint32_t width, uint32_t height)
 	vec_append(map->sideddefs, si);
 
 	sector_t *se = calloc(1, sizeof(sector_t));
-	*se = (sector_t){0, 64, "BRICK1", "BRICK1", 100, 0};
+	*se = (sector_t){0, 160, "BRICK1", "BRICK1", 150, 0};
 	vec_append(map->sectors, se);
 }
 
@@ -46,7 +46,7 @@ uint16_t	find_vertex(map_t *map, int16_t x, int16_t y)
 		if ((v->x == x) && (v->y == y))
 			return (i);
 	}
-	return (0);
+	return (0); //should not happen but whatever
 }
 
 //checks if vertex exist
@@ -100,26 +100,24 @@ void	make_linedef(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 	l->l_sidedef = 0;
 	l->r_sidedef = 0;
 
-	//two segs for both sides
-	seg_t	*seg1 = calloc(1, sizeof(seg_t));
-	seg1->start = l->start;
-	seg1->end = l->end;
-	seg1->angle = give_direction(x1, y1, x2, y2);
-	seg1->linedef = map->linedef->size;
-	seg1->direction = 0;
-	seg1->offset = 0;
+	seg_t	*seg = calloc(1, sizeof(seg_t));
+	seg->start = l->start;
+	seg->end = l->end;
+	seg->angle = give_direction(x1, y1, x2, y2);
+	seg->linedef = map->linedef->size;
+	seg->direction = 0;
+	seg->offset = 0;
 
-	seg_t	*seg2 = calloc(1, sizeof(seg_t));
-	seg2->start = l->end;
-	seg2->end = l->start;
-	seg2->angle = give_direction(x2, y2, x1, y1);
-	seg2->linedef = map->linedef->size;
-	seg2->direction = 1;
-	seg2->offset = 0;
+	// seg_t	*seg2 = calloc(1, sizeof(seg_t));
+	// seg2->start = l->end;
+	// seg2->end = l->start;
+	// seg2->angle = give_direction(x2, y2, x1, y1);
+	// seg2->linedef = map->linedef->size;
+	// seg2->direction = 1;
+	// seg2->offset = 0;
 
 	vec_append(map->linedef, l);
-	vec_append(map->segs, seg1);
-	vec_append(map->segs, seg2);
+	vec_append(map->segs, seg);
 }
 
 uint32_t	things_offset(map_t *map)
@@ -194,16 +192,61 @@ uint32_t	dir_offset(map_t *map)
 	);
 }
 
-void set_spawn(map_t *map, int32_t x, int32_t y)
+void make_thing(map_t *map, int32_t x, int32_t y, uint16_t type, uint16_t flags)
 {
 	thing_t	*t = calloc(1, sizeof(thing_t));
 
 	t->x_position = x;
 	t->y_position = y;
 	t->angle = NORTH;
-	t->type = THING_SPAWN;
-	t->flags = 0;
+	t->type = type;
+	t->flags = flags;
 	vec_append(map->things, t);
+}
+
+uint16_t rand_decoration(void)
+{
+	const uint16_t	decorations[] = {10, 12, 15, 18, 19, 20, 21, 22, 23, 24, 34, 59, 60, 61, 62, 63, 79, 80, 81};
+	const size_t	len = 19;
+
+	return (decorations[rand() % len]);
+}
+
+uint16_t rand_weapon(void)
+{
+	const uint16_t	weapons[] = {82, 2001, 2002, 2003, 2004, 2005, 2006, 2011, 2012, 2019, 2018, 2015, 2023, 2008, 2048, 2046, 2049, 2007, 2047, 17, 2010};
+	const size_t	len = 21;
+
+	return (weapons[rand() % len]);
+}
+
+uint16_t rand_enemy(void)
+{
+	const uint16_t	enemies[] = {3004, 9, 3001, 3002, 3005};
+	const size_t	len = 5;
+
+	return (enemies[rand() % len]);
+}
+
+void make_rand_thing(map_t *map, int32_t x, int32_t y)
+{
+	uint16_t thing_tag = 0;
+
+	switch (rand() % 3)
+	{
+	case 0:
+		thing_tag = rand_decoration();
+		break;
+
+	case 1:
+		thing_tag = rand_weapon();
+		break;
+
+	case 2:
+		thing_tag = rand_enemy();
+		break;
+	}
+	make_thing(map, x, y, thing_tag, 7);
 }
 
 void placeholder_node(map_t *map)
@@ -215,13 +258,13 @@ void placeholder_node(map_t *map)
 	n->change_x_partition = 1;
 	n->change_y_partition = 1;
 	n->right_box_top = 0;
-	n->right_box_bottom = 256;
+	n->right_box_bottom = 25600;
 	n->right_box_left = 0;
-	n->right_box_right = 256;
+	n->right_box_right = 25600;
 	n->left_box_top = 0;
-	n->left_box_bottom = 256;
+	n->left_box_bottom = 25600;
 	n->left_box_left = 0;
-	n->left_box_right = 256;
+	n->left_box_right = 25600;
 	n->right_child_id = 0b1000000000000000;
 	n->left_child_id = 0b1000000000000000;
 
@@ -313,10 +356,10 @@ void write_stuff(map_t *map)
 
 void create_rect(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 {
-	make_linedef(map, x1, y1, x1, y2);
+	make_linedef(map, x1, y2, x1, y1);
 	make_linedef(map, x1, y1, x2, y1);
 	make_linedef(map, x2, y1, x2, y2);
-	make_linedef(map, x1, y2, x2, y2);
+	make_linedef(map, x2, y2, x1, y2);
 }
 
 void convert_input(map_t *map, input_t *input)
@@ -331,6 +374,12 @@ void convert_input(map_t *map, input_t *input)
 		switch (input->mapstr[i])
 		{
 		case eEMPTY:
+			if (!(rand() % 4))
+				make_rand_thing(
+					map,
+					(i % map->height) * CELL_SIZE + CELL_SIZE / 2,
+					(i / map->height) * CELL_SIZE + CELL_SIZE / 2
+				);
 			break;
 
 		case eWALL:
@@ -344,10 +393,12 @@ void convert_input(map_t *map, input_t *input)
 			break;
 
 		case eSPAWN:
-				set_spawn(
+				make_thing(
 					map,
 					(i % map->height) * CELL_SIZE + CELL_SIZE / 2,
-					(i / map->height) * CELL_SIZE + CELL_SIZE / 2
+					(i / map->height) * CELL_SIZE + CELL_SIZE / 2,
+					THING_SPAWN,
+					0
 				);
 				break;
 		default:
@@ -357,11 +408,16 @@ void convert_input(map_t *map, input_t *input)
 	}
 }
 
-int main()
+void input_parser(int argc, char **argv)
+{
+
+}
+
+int main(int argc, char **argv)
 {
 	map_t map = {0};
-	char *mapstr = "111110111112000000011101011011100001111111110010011000011011101100000110100110111011111111";
-	input_t placeholder = {mapstr, 10, 10};
+	char *mapstr = "";
+	input_t placeholder = {mapstr, 101, 101};
 	convert_input(&map, &placeholder);
 	placeholder_node(&map);
 	map.file = fopen("map.wad", "w+b");

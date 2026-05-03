@@ -9,6 +9,7 @@
 #define	WEST	0x8000
 #define SOUTH	0xC000
 #define	THING_SPAWN 1
+#define TAG_EXIT 52
 
 #define SIZE_THING 10
 #define SIZE_LINEDEF 14
