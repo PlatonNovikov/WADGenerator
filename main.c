@@ -23,8 +23,6 @@ void	map_init(map_t	*map, uint32_t width, uint32_t height)
 	map->segs = vec_init();
 	map->nodes = vec_init();
 	map->things = vec_init();
-	map->reject = vec_init();
-	map->blockmap = vec_init();
 
 
 	sideddef_t *si = calloc(1, sizeof(sideddef_t));
@@ -107,14 +105,6 @@ void	make_linedef(map_t *map, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 	seg->linedef = map->linedef->size;
 	seg->direction = 0;
 	seg->offset = 0;
-
-	// seg_t	*seg2 = calloc(1, sizeof(seg_t));
-	// seg2->start = l->end;
-	// seg2->end = l->start;
-	// seg2->angle = give_direction(x2, y2, x1, y1);
-	// seg2->linedef = map->linedef->size;
-	// seg2->direction = 1;
-	// seg2->offset = 0;
 
 	vec_append(map->linedef, l);
 	vec_append(map->segs, seg);
@@ -408,7 +398,42 @@ void convert_input(map_t *map, input_t *input)
 	}
 }
 
-void input_parser(int argc, char **argv)
+void free_everything(map_t *map)
+{
+	for (int i = 0; i < map->things->size; i++)
+		free(vec_get(map->things, i));
+	vec_free(map->things);
+
+	for (int i = 0; i < map->linedef->size; i++)
+		free(vec_get(map->linedef, i));
+	vec_free(map->linedef);
+
+	for (int i = 0; i < map->sideddefs->size; i++)
+		free(vec_get(map->sideddefs, i));
+	vec_free(map->sideddefs);
+
+	for (int i = 0; i < map->vertex->size; i++)
+		free(vec_get(map->vertex, i));
+	vec_free(map->vertex);
+
+	for (int i = 0; i < map->segs->size; i++)
+		free(vec_get(map->segs, i));
+	vec_free(map->segs);
+
+	for (int i = 0; i < map->ssectors->size; i++)
+		free(vec_get(map->ssectors, i));
+	vec_free(map->ssectors);
+
+	for (int i = 0; i < map->nodes->size; i++)
+		free(vec_get(map->nodes, i));
+	vec_free(map->nodes);
+
+	for (int i = 0; i < map->sectors->size; i++)
+		free(vec_get(map->sectors, i));
+	vec_free(map->sectors);
+}
+
+void converter()
 {
 
 }
@@ -416,24 +441,13 @@ void input_parser(int argc, char **argv)
 int main(int argc, char **argv)
 {
 	map_t map = {0};
-	char *mapstr = "";
-	input_t placeholder = {mapstr, 101, 101};
+	char *mapstr = "111111111111111111111100000100000100010000111110111010101011101100010000010001000101101111111111111110101100010000010000010101101010101110101110101101000100000100010001101111111111111011101100010000010000010001111011101110111010111100010001000100010001101110101011101111101101000101000101000101101110101110101011101100010100010100010001111010111010111110111101000101010000010001101111101011111011101120000000000001000001111111111111111111111";
+	input_t placeholder = {mapstr, 21, 21};
 	convert_input(&map, &placeholder);
 	placeholder_node(&map);
 	map.file = fopen("map.wad", "w+b");
 	write_stuff(&map);
+	fclose(map.file);
+	free_everything(&map);
 	return (0);
 }
-
-
-// 1111101111
-// 1000000001
-// 1101011011
-// 1000011111
-// 1111001001
-// 1000011011
-// 1011000001
-// 1010011011
-// 1011111111
-
-//starting coord (1, 1)

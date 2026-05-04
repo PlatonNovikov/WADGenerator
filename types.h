@@ -25,11 +25,7 @@ typedef struct
 	uint16_t	width;
 	uint16_t	height;
 
-	int16_t	player_offset_x;
-	int16_t player_offset_y;
-
 	char	name[8];
-
 
 	// original order of stuff
 	t_vec	*things;
@@ -40,10 +36,6 @@ typedef struct
 	t_vec	*ssectors;
 	t_vec	*nodes;
 	t_vec	*sectors;
-
-	// ill ignore those for now
-	t_vec	*reject;
-	t_vec	*blockmap;
 
 	FILE	*file;
 } map_t;
